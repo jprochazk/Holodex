@@ -15,30 +15,33 @@ function waitFor(type: string, target: EventTarget): Promise<Event> {
     });
 }
 
-registerSW({
-    immediate: true,
-    onNeedRefresh: () => {
-        needsRefreshCallback();
-    },
-    onOfflineReady() {
-        offlineReadyCallback();
-    },
-    onRegistered(newReg) {
-        reg = newReg;
-    },
-    onRegisterError(err) {
-        console.log("Error during service worker registration:", err);
-    },
-});
+// @ts-ignore TODO: env shims
+if (import.meta.env.MODE !== "development") {
+    registerSW({
+        immediate: true,
+        onNeedRefresh: () => {
+            needsRefreshCallback();
+        },
+        onOfflineReady() {
+            offlineReadyCallback();
+        },
+        onRegistered(newReg) {
+            reg = newReg;
+        },
+        onRegisterError(err) {
+            console.log("Error during service worker registration:", err);
+        },
+    });
 
-if ("serviceWorker" in navigator) {
-    updateServiceWorkerFn = async (shouldReloadPage) => {
-        if (reg && reg.waiting) {
-            reg.waiting.postMessage({ type: "SKIP_WAITING" });
-        }
-        await waitFor("controllerchange", navigator.serviceWorker);
-        if (shouldReloadPage) window.location.reload();
-    };
+    if ("serviceWorker" in navigator) {
+        updateServiceWorkerFn = async (shouldReloadPage) => {
+            if (reg && reg.waiting) {
+                reg.waiting.postMessage({ type: "SKIP_WAITING" });
+            }
+            await waitFor("controllerchange", navigator.serviceWorker);
+            if (shouldReloadPage) window.location.reload();
+        };
+    }
 }
 
 export const setNeedsRefreshCallback = (value: () => void) => {
